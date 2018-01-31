@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<!--
+ Universal robot ur5 launch.  Loads ur5 robot description (see ur_common.launch
+ for more info)
+
+ Usage:
+ ur5_bringup.launch robot_ip:=<value>
+ -->
+
+<launch>
+
+<!--
+     Launches a node for the robot IP:
+	roslaunch ur_modern_driver ur5_bringup.launch robot_ip:=192.168.0.50
+-->
+
+  <!-- robot_ip: IP-address of the robot's socket-messaging server -->
+  <arg name="robot_ip" default="192.168.0.50"/>
+  <arg name="limited" default="true"/>
+  <arg name="min_payload"  default="0.0"/>
+  <arg name="max_payload"  default="5.0"/>
+  <arg name="prefix" default="" />
+
+  <include file="$(find ur_modern_driver)/launch/ur5_bringup.launch">
+    <arg name="limited" value="$(arg limited)"/>
+    <arg name="prefix"  value="$(arg prefix)" />
+    <arg name="robot_ip" value="$(arg robot_ip)"/>
+    <arg name="min_payload"  value="$(arg min_payload)"/>
+    <arg name="max_payload"  value="$(arg max_payload)"/>
+  </include>
+
+<!--
+roslaunch ur5_moveit_config ur5_moveit_planning_execution.launch limited:=true
+-->
+
+  <arg name="sim" default="false" />
+  <arg name="debug" default="false" />
+
+  <!-- Launch moveit-->
+  <include file="$(find ur5_gripper_moveit_config)/launch/ur5_moveit_planning_execution.launch">
+    <arg name="limited" default="$(arg limited)"/>
+    <arg name="debug" default="$(arg debug)" />
+  </include>
+
+<!--
+roslaunch ur5_moveit_config moveit_rviz.launch config:=true
+-->
+
+  <arg name="config" default="true" />
+
+  <include file="$(find ur5_gripper_moveit_config)/launch/moveit_rviz.launch">
+    <arg name="config" default="$(arg config)"/>
+  </include>
+
+<!--
+roslaunch ur5_moveit_config moveit_rviz.launch config:=true
+-->
+
+
+  <!--include file="ar_track_alvar_setup/ar_track_alvar_bundle_setup.launch"/-->
+
+
+
+<!--
+
+roslaunch visp_auto_tracker
+
+
+  <include file="$(find visp_auto_tracker)/launch/tracklive_usb.launch">
+  </include>
+-->
+<!-- launch gripper control-->
+  <node pkg="robotiq_c_model_control" type="CModelRtuNode.py" name="gripper" output="screen" args="/dev/ttyACM0"/>
+
+  <!-- Launch the usb camera acquisition node -->
+  <node pkg="usb_cam" type="usb_cam_node" name="usb_cam" output="screen">      
+    <param name="image_width" value="640" />
+    <param name="image_height" value="480" />
+    <param name="video_device" value="/dev/video0" />  
+    <param name="pixel_format" value="yuyv" />
+    <param name="camera_name" value="/camera/image_raw" />
+    <param name="camera_frame_id" value="map" />
+    <param name="camera_info_url" value="package://usb_cam/calibration.ini" type="string" />
+    <param name="autofocus" value="true"/>
+  </node>
+
+<!-- create static transform node -->
+<!--node pkg="tf2_ros" type="static_transform_publisher" name="visp_cam_frame" args=".040 0 -.040 1.57/2 0 1.57 ee_link map" /-->
+<node pkg="tf2_ros" type="static_transform_publisher" name="visp_cam_frame" args="0.07037199 0.02157724 -0.04618567 1.54113823 0.01996419 2.07645109 ee_link map" />
+
+</launch>
